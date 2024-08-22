@@ -200,6 +200,485 @@ def recent_articles():
     return jsonify(formatted_result)
 
 
+# Endpoint for Articles by Keyword
+@app.route('/articles_by_keyword/<keyword>', methods=['GET'])
+def articles_by_keyword(keyword):
+    pipeline = [
+        {"$match": {"keywords": keyword}},
+        {"$project": {"title": 1, "_id": 0}},
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [item['title'] for item in result]
+
+    return jsonify(formatted_result)
+
+# Endpoint for Articles by Author
+@app.route('/articles_by_author/<author_name>', methods=['GET'])
+def articles_by_author(author_name):
+    pipeline = [
+        {"$match": {"author": author_name}},
+        {"$project": {"title": 1, "_id": 0}},
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [item['title'] for item in result]
+
+    return jsonify(formatted_result)
+
+# Endpoint for Top Classes
+@app.route('/top_classes', methods=['GET'])
+def top_classes():
+    pipeline = [
+        {"$unwind": "$classes"},
+        {"$group": {"_id": "$classes.value", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10},
+        {
+            "$project": {
+                "class": "$_id",
+                "article_count": "$count",
+                "_id": 0
+            }
+        }
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [f"{item['class']} ({item['article_count']} articles)" for item in result]
+
+    return jsonify(formatted_result)
+
+# Endpoint for Article Details
+@app.route('/article_details/<postid>', methods=['GET'])
+def article_details(postid):
+    result = collection.find_one({"post_id": postid}, {"_id": 0, "url": 1, "title": 1, "keywords": 1})
+
+    if result:
+        formatted_result = {
+            "URL": result.get("url"),
+            "Title": result.get("title"),
+            "Keywords": result.get("keywords", [])
+        }
+        return jsonify(formatted_result)
+    else:
+        return
+
+# Endpoint for Articles Containing Video
+@app.route('/articles_with_video', methods=['GET'])
+def articles_with_video():
+    pipeline = [
+        {"$match": {"video_duration": {"$ne": None}}},  # Filter articles where video_duration is not null
+        {"$project": {"title": 1}},  # Project only the title field
+        {"$sort": {"title": 1}}  # Sort by title in ascending order (optional)
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [item['title'] for item in result]
+
+    return jsonify(formatted_result)
+
+
+# Endpoint for Articles by Publication Year
+@app.route('/articles_by_year/<int:year>', methods=['GET'])
+def articles_by_year(year):
+    pipeline = [
+        {
+            "$addFields": {
+                "published_year": {
+                    "$year": {"date": {"$dateFromString": {"dateString": "$published_time"}}}
+                }
+            }
+        },
+        {
+            "$match": {"published_year": year}
+        },
+        {
+            "$group": {
+                "_id": "$published_year",
+                "count": {"$sum": 1}
+            }
+        },
+        {
+            "$project": {
+                "year": "$_id",
+                "article_count": "$count",
+                "_id": 0
+            }
+        }
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    if result:
+        formatted_result = [f"{item['year']} ({item['article_count']} articles)" for item in result]
+        return jsonify(formatted_result)
+    else:
+        return jsonify({"error": "No articles found for the specified year"}), 404
+
+
+# Endpoint for Longest Articles
+@app.route('/longest_articles', methods=['GET'])
+def longest_articles():
+    pipeline = [
+        {
+            "$sort": {"word_count": -1}  # Sort by word count in descending order
+        },
+        {
+            "$limit": 10  # Limit to the top 10 longest articles
+        },
+        {
+            "$project": {
+                "title": 1,
+                "word_count": 1,
+                "_id": 0
+            }
+        }
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [f"{item['title']} ({item['word_count']} words)" for item in result]
+
+    return jsonify(formatted_result)
+
+
+
+# Endpoint for Shortest Articles
+@app.route('/shortest_articles', methods=['GET'])
+def shortest_articles():
+    pipeline = [
+        {
+            "$sort": {"word_count": 1}  # Sort by word count in ascending order
+        },
+        {
+            "$limit": 10  # Limit to the top 10 shortest articles
+        },
+        {
+            "$project": {
+                "title": 1,
+                "word_count": 1,
+                "_id": 0
+            }
+        }
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [f"{item['title']} ({item['word_count']} words)" for item in result]
+
+    return jsonify(formatted_result)
+
+
+# Endpoint for Articles by Keyword Count
+@app.route('/articles_by_keyword_count', methods=['GET'])
+def articles_by_keyword_count():
+    pipeline = [
+        {
+            "$project": {
+                "keyword_count": {"$size": "$keywords"}  # Count the number of keywords
+            }
+        },
+        {
+            "$group": {
+                "_id": "$keyword_count",
+                "article_count": {"$sum": 1}
+            }
+        },
+        {
+            "$project": {
+                "keywords": "$_id",
+                "article_count": "$article_count",
+                "_id": 0
+            }
+        },
+        {
+            "$sort": {"keywords": 1}  # Sort by keyword count in ascending order
+        }
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [f"{item['keywords']} keywords ({item['article_count']} articles)" for item in result]
+
+    return jsonify(formatted_result)
+
+
+# Endpoint for Articles with Thumbnail
+@app.route('/articles_with_thumbnail', methods=['GET'])
+def articles_with_thumbnail():
+    pipeline = [
+        {
+            "$match": {"thumbnail": {"$ne": None}}  # Filter articles where thumbnail is not null
+        },
+        {
+            "$project": {
+                "title": 1  # Project only the title field
+            }
+        },
+        {
+            "$sort": {"title": 1}  # Sort by title in ascending order (optional)
+        }
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [item['title'] for item in result]
+
+    return jsonify(formatted_result)
+
+# Endpoint for Articles Updated After Publication
+@app.route('/articles_updated_after_publication', methods=['GET'])
+def articles_updated_after_publication():
+    pipeline = [
+        {
+            "$match": {
+                "$expr": {
+                    "$gt": ["$last_updated", "$published_time"]  # Check if last_updated is after published_time
+                }
+            }
+        },
+        {
+            "$project": {
+                "title": 1,  # Include the title in the results
+                "_id": 0
+            }
+        },
+        {
+            "$sort": {"title": 1}  # Optional: Sort by title in ascending order
+        }
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [f"{item['title']} (Last updated after publication)" for item in result]
+
+    return jsonify(formatted_result)
+
+
+# Endpoint for Articles by Coverage
+@app.route('/articles_by_coverage/<coverage>', methods=['GET'])
+def articles_by_coverage(coverage):
+    pipeline = [
+        {
+            "$unwind": "$classes"  # Unwind the classes array to filter on individual class items
+        },
+        {
+            "$match": {
+                "classes.value": coverage  # Match articles with the specified coverage category
+            }
+        },
+        {
+            "$project": {
+                "title": 1,  # Include the title in the results
+                "_id": 0
+            }
+        },
+        {
+            "$sort": {"title": 1}  # Optional: Sort by title in ascending order
+        }
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [f"{item['title']} (Coverage on {coverage})" for item in result]
+
+    return jsonify(formatted_result)
+
+
+# Endpoint for Articles by Word Count Range
+@app.route('/articles_by_word_count_range/<int:min>/<int:max>', methods=['GET'])
+def articles_by_word_count_range(min, max):
+    # MongoDB query to find articles within the specified word count range
+    query = {
+        "word_count": {
+            "$gte": min,
+            "$lte": max
+        }
+    }
+
+    # Execute the query
+    articles = list(collection.find(query, {"title": 1, "word_count": 1, "_id": 0}))
+
+    # Count the number of articles found
+    article_count = len(articles)
+
+    # Check if any articles were found
+    if not articles:
+        return jsonify({"message": "No articles found in the specified word count range."}), 404
+
+    # Format the response
+    response_message = f"Articles between {min} and {max} words ({article_count} articles)"
+
+    return jsonify({"message": response_message})
+
+
+
+# Endpoint for Articles with Specific Keyword Count
+@app.route('/articles_with_specific_keyword_count/<int:count>', methods=['GET'])
+def articles_with_specific_keyword_count(count):
+    # MongoDB query to find articles with exactly the specified number of keywords
+    query = {
+        "keywords": {
+            "$size": count
+        }
+    }
+
+    # Execute the query
+    articles = list(collection.find(query, {"title": 1, "keywords": 1, "_id": 0}))
+
+    # Count the number of articles found
+    article_count = len(articles)
+
+    # Check if any articles were found
+    if not articles:
+        return jsonify({"message": f"No articles found with exactly {count} keywords."}), 404
+
+    # Format the response
+    response_message = f"Articles with exactly {count} keywords ({article_count} articles)"
+
+    return jsonify({"message": response_message})
+
+
+# Endpoint for Articles Containing Specific Text
+@app.route('/articles_containing_text/<text>', methods=['GET'])
+def articles_containing_text(text):
+    # Query to find articles that contain the specific text within their content (full_text)
+    query = {
+        "full_text": {
+            "$regex": text,
+            "$options": "i"  # Case-insensitive search
+        }
+    }
+
+    # Execute the query
+    articles = list(collection.find(query, {"title": 1, "_id": 0}))
+
+    # Format the response message
+    response_message = f'Articles containing "{text}"'
+
+    # List all article titles found
+    article_titles = [article['title'] for article in articles]
+
+    # Prepare the response
+    response = {
+        "message": response_message,
+        "articles": article_titles
+    }
+
+    return jsonify(response)
+
+
+# Endpoint for Articles with More than N Words
+@app.route('/articles_with_more_than/<int:word_count>', methods=['GET'])
+def articles_with_more_than(word_count):
+    # Query to find articles with more than the specified number of words
+    query = {
+        "word_count": {
+            "$gt": word_count
+        }
+    }
+
+    # Execute the query and count the number of matching articles
+    article_count = collection.count_documents(query)
+
+    # Format the response message
+    response_message = f"Articles with more than {word_count} words ({article_count} articles)"
+
+    # Prepare the response
+    response = {
+        "message": response_message
+    }
+
+    return jsonify(response)
+
+
+# Endpoint for Articles Grouped by Coverage
+@app.route('/articles_grouped_by_coverage', methods=['GET'])
+def articles_grouped_by_coverage():
+    # Aggregation pipeline to group articles by the coverage category in the 'classes' field
+    pipeline = [
+        {
+            "$unwind": "$classes"
+        },
+        {
+            "$match": {
+                "classes.mapping": "coverage"
+            }
+        },
+        {
+            "$group": {
+                "_id": "$classes.value",
+                "count": {"$sum": 1}
+            }
+        },
+        {
+            "$sort": {"count": -1}
+        }
+    ]
+
+    # Execute the aggregation pipeline
+    results = collection.aggregate(pipeline)
+
+    # Format the response
+    response = {}
+    for result in results:
+        coverage_category = result['_id']
+        count = result['count']
+        response[f"Coverage on {coverage_category}"] = f"({count} articles)"
+
+    return jsonify(response)
+
+
+# Endpoint for Articles by Length of Title
+@app.route('/articles_by_title_length', methods=['GET'])
+def articles_by_title_length():
+    # Aggregation pipeline to get titles and their lengths
+    pipeline = [
+        {
+            "$project": {
+                "title_length": {
+                    "$size": {
+                        "$split": ["$title", " "]  # Splitting title into words to count length
+                    }
+                }
+            }
+        },
+        {
+            "$group": {
+                "_id": "$title_length",
+                "count": {"$sum": 1}
+            }
+        },
+        {
+            "$sort": {"_id": 1}  # Sort by title length
+        }
+    ]
+
+    # Execute the aggregation pipeline
+    results = list(collection.aggregate(pipeline))
+
+    # Format the response
+    response = {f"Titles with {item['_id']} words": f"{item['count']} articles" for item in results}
+
+    return jsonify(response)
+
+
+
+
 # Start the Flask app
 if __name__ == '__main__':
     app.run(debug=True)

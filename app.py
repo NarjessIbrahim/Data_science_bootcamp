@@ -1,7 +1,11 @@
-from flask import Flask, jsonify
+
+from flask import Flask, jsonify, request
 from pymongo import MongoClient
+from datetime import datetime, timedelta
+import pytz
 
 app = Flask(__name__)
+
 
 # Set up MongoDB connection
 client = MongoClient('mongodb://localhost:27017/')
@@ -677,8 +681,179 @@ def articles_by_title_length():
     return jsonify(response)
 
 
+# Endpoint for Most Popular Keywords in the Last X Days
+@app.route('/popular_keywords_last_X_days', methods=['GET'])
+def popular_keywords_last_X_days():
+    # Get the number of days from the query parameters
+    days = int(request.args.get('days', 7))  # Default to 7 days if not provided
+
+    # Calculate the start date
+    end_date = datetime.now(pytz.utc)
+    start_date = end_date - timedelta(days=days)
+
+    # Convert dates to ISO format for comparison
+    start_date_iso = start_date.isoformat()
+    end_date_iso = end_date.isoformat()
+
+    # Define the pipeline for aggregation
+    pipeline = [
+        {
+            "$match": {
+                "published_time": {
+                    "$gte": start_date_iso,
+                    "$lte": end_date_iso
+                }
+            }
+        },
+        {"$unwind": "$keywords"},
+        {"$group": {"_id": "$keywords", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results
+    formatted_result = [f"{item['_id']} ({item['count']} occurrences)" for item in result]
+
+    return jsonify(formatted_result)
 
 
-# Start the Flask app
+@app.route('/articles_by_specific_date/<date>', methods=['GET'])
+def articles_by_specific_date(date):
+    try:
+        # Convert the input date to a datetime object
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
+
+        # Create a start and end of the day for querying
+        start_of_day = datetime(date_obj.year, date_obj.month, date_obj.day, 0, 0, 0, tzinfo=pytz.UTC)
+        end_of_day = start_of_day.replace(hour=23, minute=59, second=59)
+
+        # Query the collection for articles published on that specific date
+        query = {
+            'published_time': {
+                '$gte': start_of_day.isoformat(),
+                '$lte': end_of_day.isoformat()
+            }
+        }
+        articles = list(collection.find(query))
+        count = len(articles)
+
+        return jsonify({date: count})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route('/articles_by_month/<year>/<month>', methods=['GET'])
+def articles_by_month(year, month):
+    try:
+        # Convert year and month to integers
+        year = int(year)
+        month = int(month)
+
+        # Determine the start and end of the month
+        start_of_month = datetime(year, month, 1, 0, 0, 0, tzinfo=pytz.UTC)
+        end_of_month = datetime(year, month + 1, 1, 0, 0, 0, tzinfo=pytz.UTC)
+
+        # Query the collection for articles published in the given month
+        query = {
+            'published_time': {
+                '$gte': start_of_month.isoformat(),
+                '$lt': end_of_month.isoformat()
+            }
+        }
+        count = collection.count_documents(query)
+
+        # Format month name
+        month_name = start_of_month.strftime('%B %Y')
+
+        return jsonify({month_name: count})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+from pymongo.errors import ServerSelectionTimeoutError
+
+
+@app.route('/most_updated_articles', methods=['GET'])
+def most_updated_articles():
+    try:
+        pipeline = [
+            # Add a field to count the number of updates
+            {
+                "$addFields": {
+                    "update_count": {
+                        "$size": {
+                            "$ifNull": ["$update_history", []]
+                        }
+                    }
+                }
+            },
+            # Group by article title and count the updates
+            {
+                "$group": {
+                    "_id": "$title",
+                    "update_count": {"$max": "$update_count"}
+                }
+            },
+            # Sort by update_count in descending order
+            {
+                "$sort": {"update_count": -1}
+            },
+            # Limit to top 10 articles
+            {
+                "$limit": 10
+            }
+        ]
+
+        # Execute the aggregation pipeline
+        results = list(collection.aggregate(pipeline))
+
+        # Format the response
+        response = [{"title": result['_id'], "update_count": result['update_count']} for result in results]
+
+        return jsonify(response)
+
+    except ServerSelectionTimeoutError:
+        return jsonify({"error": "Could not connect to MongoDB."}), 500
+
+
+
+@app.route('/articles_last_X_hours', methods=['GET'])
+def articles_last_x_hours():
+    try:
+        # Get the number of hours from the query parameter
+        hours = int(request.args.get('hours', 24))  # Default to 24 hours if not provided
+
+        # Calculate the start time for the query
+        now = datetime.now(pytz.UTC)
+        start_time = now - timedelta(hours=hours)
+
+        # Query the collection for articles published in the last X hours
+        query = {
+            'published_time': {
+                '$gte': start_time.isoformat()
+            }
+        }
+        articles = collection.find(query)
+
+        # Format the result
+        results = []
+        for article in articles:
+            # Assuming there's a field 'title' for the article name
+            title = article.get('title', 'Untitled')
+            published_time = article.get('published_time')
+            results.append(f"{title} (Published within the last {hours} hours)")
+
+        return jsonify(results)
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
+
+#start the Flask app
 if __name__ == '__main__':
     app.run(debug=True)

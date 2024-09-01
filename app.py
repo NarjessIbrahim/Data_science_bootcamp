@@ -3,9 +3,11 @@ from flask import Flask, jsonify, request
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 import pytz
+from flask import Flask
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+CORS(app)
 
 # Set up MongoDB connection
 client = MongoClient('mongodb://localhost:27017/')

@@ -176,7 +176,7 @@ def articles_by_classes():
     # Format the results
     formatted_result = [f"{item['category']} ({item['article_count']} articles)" for item in result]
 
-    return jsonify(formatted_result)
+    return jsonify(result)
 
 
 # Endpoint for Recent Articles
@@ -219,7 +219,7 @@ def articles_by_keyword(keyword):
     # Format the results
     formatted_result = [item['title'] for item in result]
 
-    return jsonify(formatted_result)
+    return jsonify(result)
 
 # Endpoint for Articles by Author
 @app.route('/articles_by_author/<author_name>', methods=['GET'])
@@ -290,6 +290,23 @@ def articles_with_video():
     formatted_result = [item['title'] for item in result]
 
     return jsonify(formatted_result)
+
+
+@app.route('/articles_with_and_without_video', methods=['GET'])
+def articles_with_and_without_video():
+    # Pipeline to count articles with video
+    with_video_count = collection.count_documents({"video_duration": {"$ne": None}})
+
+    # Pipeline to count articles without video
+    without_video_count = collection.count_documents({"video_duration": None})
+
+    # Create the response dictionary
+    result = {
+        "articles_with_video": with_video_count,
+        "articles_without_video": without_video_count
+    }
+
+    return jsonify(result)
 
 
 # Endpoint for Articles by Publication Year

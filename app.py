@@ -234,7 +234,7 @@ def articles_by_author(author_name):
     # Format the results
     formatted_result = [item['title'] for item in result]
 
-    return jsonify(formatted_result)
+    return jsonify(result)
 
 # Endpoint for Top Classes
 @app.route('/top_classes', methods=['GET'])
@@ -342,7 +342,7 @@ def articles_by_year(year):
 
     if result:
         formatted_result = [f"{item['year']} ({item['article_count']} articles)" for item in result]
-        return jsonify(formatted_result)
+        return jsonify(result)
     else:
         return jsonify({"error": "No articles found for the specified year"}), 404
 
@@ -371,14 +371,16 @@ def longest_articles():
     # Format the results
     formatted_result = [f"{item['title']} ({item['word_count']} words)" for item in result]
 
-    return jsonify(formatted_result)
+    return jsonify(result)
 
 
 
-# Endpoint for Shortest Articles
 @app.route('/shortest_articles', methods=['GET'])
 def shortest_articles():
     pipeline = [
+        {
+            "$match": {"word_count": {"$gt": 0}}  # Exclude articles with 0 words
+        },
         {
             "$sort": {"word_count": 1}  # Sort by word count in ascending order
         },
@@ -396,10 +398,9 @@ def shortest_articles():
 
     result = list(collection.aggregate(pipeline))
 
-    # Format the results
-    formatted_result = [f"{item['title']} ({item['word_count']} words)" for item in result]
+    return jsonify(result)
 
-    return jsonify(formatted_result)
+
 
 
 # Endpoint for Articles by Keyword Count
@@ -434,7 +435,7 @@ def articles_by_keyword_count():
     # Format the results
     formatted_result = [f"{item['keywords']} keywords ({item['article_count']} articles)" for item in result]
 
-    return jsonify(formatted_result)
+    return jsonify(result)
 
 
 # Endpoint for Articles with Thumbnail
@@ -460,6 +461,34 @@ def articles_with_thumbnail():
     formatted_result = [item['title'] for item in result]
 
     return jsonify(formatted_result)
+
+
+# Endpoint for Articles with and without Thumbnail
+@app.route('/articles_with_or_without_thumbnail', methods=['GET'])
+def articles_with_or_without_thumbnail():
+    pipeline = [
+        {
+            "$group": {
+                "_id": {
+                    "$cond": [{"$ne": ["$thumbnail", None]}, "With Thumbnail", "Without Thumbnail"]
+                },
+                "count": {"$sum": 1}
+            }
+        }
+    ]
+
+    result = list(collection.aggregate(pipeline))
+
+    # Format the results into a more readable format
+    formatted_result = {
+        "with_thumbnail": next((item['count'] for item in result if item['_id'] == "With Thumbnail"), 0),
+        "without_thumbnail": next((item['count'] for item in result if item['_id'] == "Without Thumbnail"), 0)
+    }
+
+    return jsonify(formatted_result)
+
+
+
 
 # Endpoint for Articles Updated After Publication
 @app.route('/articles_updated_after_publication', methods=['GET'])
@@ -488,7 +517,52 @@ def articles_updated_after_publication():
     # Format the results
     formatted_result = [f"{item['title']} (Last updated after publication)" for item in result]
 
-    return jsonify(formatted_result)
+    return jsonify(result)
+
+@app.route('/articles_updated_status', methods=['GET'])
+def articles_updated_status():
+    # Pipeline to count articles updated after publication
+    pipeline_updated = [
+        {
+            "$match": {
+                "$expr": {
+                    "$gt": ["$last_updated", "$published_time"]  # Check if last_updated is after published_time
+                }
+            }
+        },
+        {
+            "$count": "updated_articles_count"  # Count the number of matching documents
+        }
+    ]
+
+    # Pipeline to count articles not updated after publication
+    pipeline_not_updated = [
+        {
+            "$match": {
+                "$expr": {
+                    "$eq": ["$last_updated", "$published_time"]  # Check if last_updated is equal to published_time
+                }
+            }
+        },
+        {
+            "$count": "not_updated_articles_count"  # Count the number of matching documents
+        }
+    ]
+
+    # Execute both pipelines
+    updated_result = list(collection.aggregate(pipeline_updated))
+    not_updated_result = list(collection.aggregate(pipeline_not_updated))
+
+    # Extract the counts, default to 0 if no matching documents were found
+    updated_count = updated_result[0]["updated_articles_count"] if updated_result else 0
+    not_updated_count = not_updated_result[0]["not_updated_articles_count"] if not_updated_result else 0
+
+    # Return the counts as a JSON response
+    return jsonify({
+        "updated_articles_count": updated_count,
+        "not_updated_articles_count": not_updated_count
+    })
+
 
 
 # Endpoint for Articles by Coverage
@@ -519,7 +593,7 @@ def articles_by_coverage(coverage):
     # Format the results
     formatted_result = [f"{item['title']} (Coverage on {coverage})" for item in result]
 
-    return jsonify(formatted_result)
+    return jsonify(result)
 
 
 # Endpoint for Articles by Word Count Range
@@ -704,7 +778,7 @@ def articles_by_title_length():
 @app.route('/popular_keywords_last_X_days', methods=['GET'])
 def popular_keywords_last_X_days():
     # Get the number of days from the query parameters
-    days = int(request.args.get('days', 7))  # Default to 7 days if not provided
+    days = int(request.args.get('days', 100))  # Default to 7 days if not provided
 
     # Calculate the start date
     end_date = datetime.now(pytz.utc)
@@ -735,7 +809,7 @@ def popular_keywords_last_X_days():
     # Format the results
     formatted_result = [f"{item['_id']} ({item['count']} occurrences)" for item in result]
 
-    return jsonify(formatted_result)
+    return jsonify(result)
 
 
 @app.route('/articles_by_specific_date/<date>', methods=['GET'])
@@ -844,7 +918,7 @@ def most_updated_articles():
 def articles_last_x_hours():
     try:
         # Get the number of hours from the query parameter
-        hours = int(request.args.get('hours', 24))  # Default to 24 hours if not provided
+        hours = int(request.args.get('hours', 500))  # Default to 24 hours if not provided
 
         # Calculate the start time for the query
         now = datetime.now(pytz.UTC)

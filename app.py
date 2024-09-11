@@ -918,7 +918,7 @@ def most_updated_articles():
 def articles_last_x_hours():
     try:
         # Get the number of hours from the query parameter
-        hours = int(request.args.get('hours', 500))  # Default to 24 hours if not provided
+        hours = int(request.args.get('hours', 700))  # Default to 24 hours if not provided
 
         # Calculate the start time for the query
         now = datetime.now(pytz.UTC)
@@ -945,6 +945,69 @@ def articles_last_x_hours():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+
+@app.route('/keyword_trends/<keyword>', methods=['GET'])
+def keyword_trends(keyword):
+    # Query articles where 'entities' contains the specified keyword
+    pipeline = [
+        {"$match": {"entities.text": {"$regex": keyword, "$options": "i"}}},
+        {
+            "$addFields": {
+                "published_time_as_date": {"$toDate": "$published_time"}  # Cast to date
+            }
+        },
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$published_time_as_date"}},  # Group by date
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id": 1}}  # Sort by date (ascending)
+    ]
+
+    results = list(collection.aggregate(pipeline))
+
+    trend_data = [{"date": result["_id"], "count": result["count"]} for result in results]
+
+    return jsonify(trend_data)
+
+
+@app.route('/sentiment_trends', methods=['GET'])
+def sentiment_trends():
+    pipeline = [
+        {
+            '$addFields': {
+                # Ensure published_time is a valid date format
+                'published_date': {
+                    '$dateFromString': {
+                        'dateString': '$published_time'
+                    }
+                }
+            }
+        },
+        {
+            # Group by date and count sentiment categories
+            '$group': {
+                '_id': {'$dateToString': {'format': '%Y-%m-%d', 'date': '$published_date'}},
+                'positive': {'$sum': {'$cond': [{'$gt': ['$sentiment', 0]}, 1, 0]}},
+                'neutral': {'$sum': {'$cond': [{'$eq': ['$sentiment', 0]}, 1, 0]}},
+                'negative': {'$sum': {'$cond': [{'$lt': ['$sentiment', 0]}, 1, 0]}}
+            }
+        },
+        {
+            '$project': {
+                '_id': 0,  # Exclude the _id field
+                'date': '$_id',
+                'positive': 1,
+                'neutral': 1,
+                'negative': 1
+            }
+        },
+        {
+            '$sort': {'date': 1}  # Sort by date in ascending order
+        }
+    ]
+
+    results = list(collection.aggregate(pipeline))
+    return jsonify(results)
 
 
 #start the Flask app

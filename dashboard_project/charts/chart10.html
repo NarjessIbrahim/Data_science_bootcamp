@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<!-- Styles -->
+<style>
+#chartdiv {
+  width: 100%;
+  height: 500px;
+}
+</style>
+
+<!-- Resources -->
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+<!-- Chart code -->
+<script>
+am5.ready(function() {
+
+// Create root element
+var root = am5.Root.new("chartdiv");
+
+// Set themes
+root.setThemes([
+  am5themes_Animated.new(root)
+]);
+
+// Create chart
+var chart = root.container.children.push(
+  am5percent.PieChart.new(root, {
+    endAngle: 270
+  })
+);
+
+// Create series
+var series = chart.series.push(
+  am5percent.PieSeries.new(root, {
+    valueField: "value",
+    categoryField: "category",
+    endAngle: 270
+  })
+);
+
+series.states.create("hidden", {
+  endAngle: -90
+});
+
+// Fetch data from the API
+fetch('http://127.0.0.1:5000/top_classes')
+  .then(response => response.json())
+  .then(apiData => {
+    // Transform the API data to fit the required structure
+    const transformedData = apiData.map(item => {
+      const [category, value] = item.match(/^(.+)\s\((\d+)\sarticles\)$/).slice(1, 3);
+      return {
+        category: category.trim(),
+        value: parseInt(value)
+      };
+    });
+
+    // Set the data to the series
+    series.data.setAll(transformedData);
+
+    // Make the chart animate on load
+    series.appear(1000, 100);
+  })
+  .catch(error => console.error('Error fetching data:', error));
+
+}); // end am5.ready()
+</script>
+
+<!-- HTML -->
+<div id="chartdiv"></div>
+
+</body>
+</html>

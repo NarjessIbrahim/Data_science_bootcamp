@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard with Sidebar and Charts</title>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Styles for layout -->
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #fff; /* White background for the page */
+        }
+        .container {
+            display: flex;
+            height: calc(100vh - 60px); /* Adjust height to account for footer */
+        }
+        /* Sidebar styles */
+        .sidebar {
+            width: 200px; /* Width for sidebar */
+            background-color: #333; /* Dark color for sidebar */
+            color: white;
+            padding: 10px; /* Reduced padding */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* Enable scrolling if content overflows */
+        }
+        .sidebar h2 {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 16px; /* Smaller font size */
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 0; /* Reduced padding */
+            margin-bottom: 8px; /* Reduced margin */
+            display: flex;
+            align-items: center;
+            transition: 0.3s;
+            font-size: 14px; /* Smaller font size */
+        }
+        .sidebar a:hover {
+            background-color: #FF4500; /* Slightly lighter color for hover */
+            border-radius: 5px;
+        }
+        .sidebar i {
+            margin-right: 8px; /* Space between icon and text */
+        }
+        /* Content styles */
+        .content {
+            flex: 1;
+            padding: 20px;
+            background-color: #f0f0f0; /* Light grey background */
+            overflow-y: auto;
+        }
+        .main-info {
+            display: block;
+            text-align: center;
+        }
+        .main-info h1 {
+            margin-bottom: 20px;
+            color: #333; /* Dark color for the title */
+        }
+        .main-info #image-container {
+            width: 100%;
+            text-align: center; /* Center the image */
+            margin-bottom: 20px;
+        }
+        .main-info #image-container img {
+            max-width: 100%; /* Ensure the image fits within the container */
+            height: auto; /* Maintain aspect ratio */
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Each chart takes up one row */
+            gap: 20px;
+        }
+        .chart-card {
+            background-color: #fff; /* White background for chart cards */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 30px; /* Space between chart cards */
+            transition: transform 0.3s, box-shadow 0.3s;
+            padding: 10px; /* Padding around iframe */
+        }
+        .chart-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .chart-card h2 {
+            margin: 0;
+            padding: 15px;
+            color: #333; /* Dark color for text */
+            background-color: #f0f0f0; /* Light grey background */
+        }
+        .iframe-container {
+            width: 100%;
+            min-height: 500px; /* Minimum height for iframe */
+            max-height: 800px; /* Maximum height for iframe */
+            border: none;
+            display: block; /* Ensure iframe block level */
+        }
+        .hidden {
+            display: none;
+        }
+
+        /* Falling Animation */
+        .falling-container {
+            overflow: hidden;
+            position: relative;
+            height: 100px; /* Adjust height as needed */
+        }
+
+        .falling-text {
+            position: absolute;
+            top: -100px; /* Start from above */
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+            color: #FF4500; /* Dark color for text */
+            animation: falling 2s ease-in-out forwards;
+        }
+
+        @keyframes falling {
+            0% {
+                top: -100px;
+                opacity: 0;
+            }
+            100% {
+                top: 40px; /* Adjust to final position */
+                opacity: 1;
+            }
+        }
+
+        /* Footer styles */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333; /* Dark color for footer */
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            white-space: nowrap; /* Prevent line breaks */
+        }
+        .footer-content {
+            display: inline-block;
+            padding-left: 100%; /* Start from the right edge */
+            animation: scroll-left 20s linear infinite;
+        }
+        @keyframes scroll-left {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <h2>Dashboard</h2>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content">
+        <div id="main-info" class="main-info">
+            <h1>Welcome to the Dashboard</h1>
+            <div id="image-container">
+                <img id="dashboard-image" src="https://upload.wikimedia.org/wikipedia/en/1/19/Al_Mayadeen_logo.png" alt="Dashboard Image">
+            </div>
+            <!-- Falling text -->
+            <div class="falling-container">
+                <p class="falling-text">Use the sidebar to select and view detailed charts, to gain comprehensive insights into the data.</p>
+            </div>
+        </div>
+        <div id="charts-container" class="charts-grid hidden">
+            <!-- Charts will be dynamically loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+    <div class="footer-content">
+        Narjess Ibrahim | <a href="mailto:10121541@mu.edu.lb" style="color: white; text-decoration: none;">10121541@mu.edu.lb</a>
+    </div>
+</div>
+
+<script>
+    // Function to generate sidebar links and load corresponding charts
+    function generateSidebar() {
+        const sidebar = document.getElementById('sidebar');
+
+        // Array to hold the names of the charts with correct paths and display names
+        const chartNames = [
+            { id: 'charts/chart1', name: 'Top Keywords' },
+            { id: 'charts/chart2', name: 'Top Authors' },
+            { id: 'charts/chart3', name: 'Articles by Date' },
+            { id: 'charts/chart4', name: 'Articles by Word Count' },
+            { id: 'charts/chart5', name: 'Articles by Language' },
+            { id: 'charts/chart6', name: 'Articles by Classes' },
+            { id: 'charts/chart7', name: 'Recent Articles' },
+            { id: 'charts/chart8', name: 'Articles by Keyword' },
+            { id: 'charts/chart9', name: 'Articles by Author' },
+            { id: 'charts/chart10', name: 'Top Classes' },
+            { id: 'charts/chart11', name: 'Article Details' },
+            { id: 'charts/chart12', name: 'Articles Containing Videos' },
+            { id: 'charts/chart13', name: 'Articles by Publication Year' },
+            { id: 'charts/chart14', name: 'Longest Articles' },
+            { id: 'charts/chart15', name: 'Shortest Articles' },
+            { id: 'charts/chart16', name: 'Articles by Keyword Count' },
+            { id: 'charts/chart17', name: 'Articles by Thumbnail Presence' },
+            { id: 'charts/chart18', name: 'Articles Updated After Publication' },
+            { id: 'charts/chart19', name: 'Most Popular Keyword in Last X Days' },
+            { id: 'charts/chart20', name: 'Articles by Published Month' },
+            { id: 'charts/chart21', name: 'Articles by Word Count Range' },
+            { id: 'charts/chart22', name: 'Articles by Specific Keyword Count' },
+            { id: 'charts/chart23', name: 'Articles by Specific Date' },
+            { id: 'charts/chart24', name: 'Articles with More Than N Words' },
+            { id: 'charts/chart25', name: 'Articles Grouped by Coverage' },
+            { id: 'charts/chart26', name: 'Articles pyblished in last X hours' },
+            { id: 'charts/chart27', name: 'Articles by length of title' },
+            { id: 'charts/chart28', name: 'Keyword Trends' },
+            { id: 'charts/chart29', name: 'Sentiment Trends' }
+        ];
+
+        // Create a link for each chart and append to sidebar
+        chartNames.forEach(chart => {
+            const link = document.createElement('a');
+            link.href = '#';
+            link.innerHTML = `<i class="fas fa-chart-bar"></i> ${chart.name}`;
+            link.addEventListener('click', function() {
+                loadChart(chart.id, chart.name);
+            });
+            sidebar.appendChild(link);
+        });
+    }
+
+    // Function to load the corresponding chart into the content area
+    function loadChart(chartId, chartName) {
+        // Hide the main info and show the charts grid
+        document.getElementById('main-info').classList.add('hidden');
+        document.getElementById('charts-container').classList.remove('hidden');
+
+        // Clear existing charts
+        const chartsContainer = document.getElementById('charts-container');
+        chartsContainer.innerHTML = '';
+
+        // Create a new chart card with iframe
+        const chartCard = document.createElement('div');
+        chartCard.classList.add('chart-card');
+
+        const chartTitle = document.createElement('h2');
+        chartTitle.textContent = chartName;
+        chartCard.appendChild(chartTitle);
+
+        const iframe = document.createElement('iframe');
+        iframe.src = chartId + '.html'; // Load the corresponding HTML chart file
+        iframe.classList.add('iframe-container');
+        chartCard.appendChild(iframe);
+
+        // Append the chart card to the container
+        chartsContainer.appendChild(chartCard);
+    }
+
+    // Call function to generate sidebar on page load
+    window.onload = generateSidebar;
+</script>
+
+</body>
+</html>
+

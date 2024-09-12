@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Article Details</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .keywords {
+            list-style-type: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Article Details</h1>
+    <table id="articleDetailsTable">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Keywords</th>
+                <th>URL</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data rows will be inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Replace <postid> with the actual post ID
+        const postId = '1838457'; // Example: '12345'
+        const url = `http://127.0.0.1:5000/article_details/${postId}`;
+
+        // Fetch data from the API
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('articleDetailsTable').getElementsByTagName('tbody')[0];
+
+                // Create a new row
+                const row = tableBody.insertRow();
+
+                // Create cells
+                const titleCell = row.insertCell(0);
+                const keywordsCell = row.insertCell(1);
+                const urlCell = row.insertCell(2);
+
+                // Insert data into cells
+                titleCell.textContent = data.Title;
+                urlCell.innerHTML = `<a href="${data.URL}" target="_blank">${data.URL}</a>`;
+
+                // Create a list for keywords
+                const keywordsList = document.createElement('ul');
+                keywordsList.className = 'keywords';
+                data.Keywords.forEach(keyword => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = keyword;
+                    keywordsList.appendChild(listItem);
+                });
+                keywordsCell.appendChild(keywordsList);
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    </script>
+</body>
+</html>

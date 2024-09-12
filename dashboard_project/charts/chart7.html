@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recent Articles</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Recent Articles</h1>
+    <table id="articlesTable">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Published Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data rows will be inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Fetch data from the API
+        fetch('http://127.0.0.1:5000/recent_articles')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('articlesTable').getElementsByTagName('tbody')[0];
+
+                data.forEach(article => {
+                    // Extract title and date
+                    const title = article.split(' (Published on ')[0];
+                    const publishedDate = article.split('Published on ')[1].replace(')', '');
+
+                    // Create a new row
+                    const row = tableBody.insertRow();
+
+                    // Create cells and append data
+                    const titleCell = row.insertCell(0);
+                    const dateCell = row.insertCell(1);
+
+                    titleCell.textContent = title;
+                    dateCell.textContent = publishedDate;
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    </script>
+</body>
+</html>

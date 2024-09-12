@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Articles by Keyword Count </title>
+</head>
+<body>
+
+<!-- Styles -->
+<style>
+#chartdiv {
+  width: 100%;
+  height: 600px;
+}
+</style>
+
+<!-- Resources -->
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/wc.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+<!-- Chart code -->
+<script>
+am5.ready(function() {
+  // Create root element
+  var root = am5.Root.new("chartdiv");
+
+  // Set themes
+  root.setThemes([
+    am5themes_Animated.new(root)
+  ]);
+
+  // Add chart container
+  var container = root.container.children.push(am5.Container.new(root, {
+    width: am5.percent(100),
+    height: am5.percent(100),
+    layout: root.verticalLayout
+  }));
+
+  // Add chart title
+  var title = container.children.push(am5.Label.new(root, {
+    text: "Articles Related to Keyword",
+    fontSize: 20,
+    x: am5.percent(50),
+    centerX: am5.percent(50)
+  }));
+
+  // Add series
+  var series = container.children.push(am5wc.WordCloud.new(root, {
+    categoryField: "title",
+    valueField: "weight",
+    calculateAggregates: true // this is needed for heat rules to work
+  }));
+
+  // Set up heat rules
+  series.set("heatRules", [{
+    target: series.labels.template,
+    dataField: "value",
+    min: am5.color(0xFFD4C2),
+    max: am5.color(0xFF621F),
+    key: "fill"
+  }]);
+
+  // Configure labels
+  series.labels.template.setAll({
+    paddingTop: 5,
+    paddingBottom: 5,
+    paddingLeft: 5,
+    paddingRight: 5,
+    fontFamily: "Courier New",
+    cursorOverStyle: "pointer"
+  });
+
+  // Add click event on words
+  series.labels.template.events.on("click", function(ev) {
+    // Open link to article
+    const articleTitle = ev.target.dataItem.get("category");
+    alert("Clicked on: " + articleTitle);
+  });
+
+  // Fetch data and set it
+  fetch('http://127.0.0.1:5000/articles_by_keyword/%D8%BA%D8%B2%D8%A9')
+    .then(response => response.json())
+    .then(data => {
+      const keyword = "غزة"; // This should be dynamic based on the URL parameter
+
+      // Format data for Word Cloud
+      const formattedData = data.map(article => ({
+        title: article.title,
+        weight: 1 // Adjust weight if needed
+      }));
+
+      // Add the keyword as a central element
+      formattedData.unshift({
+        title: keyword,
+        weight: 2 // Higher weight to make it central
+      });
+
+      series.data.setAll(formattedData);
+      series.appear(1000, 100);
+    });
+});
+</script>
+
+<!-- HTML -->
+<div id="chartdiv"></div>
+
+
+</body>
+</html>

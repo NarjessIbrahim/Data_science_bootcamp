@@ -123,8 +123,9 @@ In this task, sentiment analysis and entity recognition are performed using Text
 - /sentiment_trends: Visualize sentiment trends over time.
 - /keyword_trends/<keyword>: Visualize keyword trends over time.
 
-```
+
 ## File Structure
+```
 project-directory/
 │
 ├── charts/              # Contains individual chart HTML files

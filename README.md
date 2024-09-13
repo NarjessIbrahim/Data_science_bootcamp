@@ -94,11 +94,11 @@ python app.py
 Access the endpoints via http://127.0.0.1:5000/.
 
 ### API Endpoints:
-/top_keywords: Get top 10 keywords.
-/top_authors: Get top 10 authors.
-/articles_by_date: Get article counts by date.
-/articles_by_word_count: Get article counts by word count.
-and more ...
+- /top_keywords: Get top 10 keywords.
+- /top_authors: Get top 10 authors.
+- /articles_by_date: Get article counts by date.
+- /articles_by_word_count: Get article counts by word count.
+- and more ...
 
 ### Data Visualization (Task 3)
 To visualize the data, start the Flask server and open the dashboard.html file in the browser. It will display interactive charts for various metrics such as top keywords, articles by date, and more.
@@ -107,26 +107,26 @@ To visualize the data, start the Flask server and open the dashboard.html file i
 In this task, sentiment analysis and entity recognition are performed using TextBlob/Stanza. To run sentiment analysis and extract entities:
 
 ### New endpoints include:
-/articles_by_sentiment/<sentiment_type>: Get articles with positive sentiment.
-/articles_by_entity/<entity>: Get articles mentioning specific entities.
-/sentiment_trends: Visualize sentiment trends over time.
-/keyword_trends/<keyword>: Visualize keyword trends over time.
+- /articles_by_sentiment/<sentiment_type>: Get articles with positive sentiment.
+- /articles_by_entity/<entity>: Get articles mentioning specific entities.
+- /sentiment_trends: Visualize sentiment trends over time.
+- /keyword_trends/<keyword>: Visualize keyword trends over time.
 
 ## File Structure
-project-directory/
-│
-├── charts/              # Contains individual chart HTML files
-│   ├── chart1.html      # Top Keywords
-│   ├── chart2.html      # Top Authors
-│   ├── ...              # Other charts
-│
-├── dashboard.html       # Main dashboard file
-├── web_scraper.py       # Script for scraping articles
-├── data_storage.py      # Script for storing data in MongoDB
-├── app.py               # Flask API for querying data
-├── sentiment.py         # Sentiment analysis and trend visualization
-├── entity_recognition.py# Entity recognition and visualization
-├── README.md            # This file
+- project-directory/
+- │
+- ├── charts/              # Contains individual chart HTML files
+- │   ├── chart1.html      # Top Keywords
+- │   ├── chart2.html      # Top Authors
+- │   ├── ...              # Other charts
+- │
+- ├── dashboard.html       # Main dashboard file
+- ├── web_scraper.py       # Script for scraping articles
+- ├── data_storage.py      # Script for storing data in MongoDB
+- ├── app.py               # Flask API for querying data
+- ├── sentiment.py         # Sentiment analysis and trend visualization
+- ├── entity_recognition.py# Entity recognition and visualization
+- ├── README.md            # This file
 
 
 ## Contributing

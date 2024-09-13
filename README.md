@@ -123,22 +123,23 @@ In this task, sentiment analysis and entity recognition are performed using Text
 - /sentiment_trends: Visualize sentiment trends over time.
 - /keyword_trends/<keyword>: Visualize keyword trends over time.
 
+```
 ## File Structure
-- project-directory/
-- │
-- ├── charts/              # Contains individual chart HTML files
-- │   ├── chart1.html      # Top Keywords
-- │   ├── chart2.html      # Top Authors
-- │   ├── ...              # Other charts
-- │
-- ├── dashboard.html       # Main dashboard file
-- ├── web_scraper.py       # Script for scraping articles
-- ├── data_storage.py      # Script for storing data in MongoDB
-- ├── app.py               # Flask API for querying data
-- ├── sentiment.py         # Sentiment analysis and trend visualization
-- ├── entity_recognition.py# Entity recognition and visualization
-- ├── README.md            # This file
-
+project-directory/
+│
+├── charts/              # Contains individual chart HTML files
+│   ├── chart1.html      # Top Keywords
+│   ├── chart2.html      # Top Authors
+│   ├── ...              # Other charts
+│
+├── dashboard.html       # Main dashboard file
+├── web_scraper.py       # Script for scraping articles
+├── data_storage.py      # Script for storing data in MongoDB
+├── app.py               # Flask API for querying data
+├── sentiment.py         # Analyze all articles and update sentiment in MongoDB
+├── entity_recognition.py# extract entities and update the article with the extracted entities in MongoDB
+├── README.md            # This file
+```
 
 ## Contributing
 Contributions are welcome! Please fork the repository and use a feature branch. Pull requests are warmly welcome.

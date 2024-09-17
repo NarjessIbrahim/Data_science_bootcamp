@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Articles by Word Count</title>
 </head>
 <body>
 <!-- Styles -->
@@ -17,6 +17,13 @@
 <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
 <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
 <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+<!-- Input fields for word count -->
+<div>
+    <label for="wordCount">Number of Words:</label>
+    <input type="number" id="wordCount" value="700" min="0">
+    <button id="updateChartButton">Update Chart</button>
+</div>
 
 <!-- Chart code -->
 <script>
@@ -66,20 +73,40 @@ var series = chart.series.push(am5xy.ColumnSeries.new(root, {
   })
 }));
 
+// Set column colors to green
 series.columns.template.setAll({
+  fill: am5.color(0x00FF00), // Green color
+  strokeOpacity: 0,
   cornerRadiusTL: 5,
-  cornerRadiusTR: 5,
-  strokeOpacity: 0
+  cornerRadiusTR: 5
 });
 
-// Set data
-var data = [
-  { wordCountRange: "More than 700 words", count: 228 }
-  // Add more data as needed
-];
+// Function to fetch and update data
+function updateChart(wordCount) {
+  fetch(`http://127.0.0.1:5000/articles_with_more_than/${wordCount}`)
+    .then(response => response.json())
+    .then(data => {
+      // Assuming the API response format is { "message": "Articles with more than X words (Y articles)" }
+      var count = parseInt(data.message.match(/\d+ articles/)[0]);
 
-xAxis.data.setAll(data);
-series.data.setAll(data);
+      var newData = [
+        { wordCountRange: `More than ${wordCount} words`, count: count }
+      ];
+
+      xAxis.data.setAll(newData);
+      series.data.setAll(newData);
+    })
+    .catch(error => console.error('Error fetching data:', error));
+}
+
+// Add event listener to the button to update chart when clicked
+document.getElementById('updateChartButton').addEventListener('click', function() {
+  var wordCount = document.getElementById('wordCount').value;
+  updateChart(wordCount);
+});
+
+// Initial load of chart with default value (700 words)
+updateChart(700);
 
 // Animate chart on load
 series.appear(1000);
@@ -88,7 +115,7 @@ chart.appear(1000, 100);
 }); // end am5.ready()
 </script>
 
-<!-- HTML -->
+<!-- Chart container -->
 <div id="chartdiv"></div>
 
 </body>

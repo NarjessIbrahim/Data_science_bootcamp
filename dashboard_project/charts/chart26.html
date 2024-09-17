@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Word Cloud</title>
 </head>
 <body>
 <!-- Styles -->
@@ -17,6 +17,13 @@
 <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
 <script src="https://cdn.amcharts.com/lib/5/wc.js"></script>
 <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+<!-- Input fields for number of hours -->
+<div>
+    <label for="hours">Number of Hours:</label>
+    <input type="number" id="hours" value="24" min="0">
+    <button id="updateChartButton">Update Chart</button>
+</div>
 
 <!-- Chart code -->
 <script>
@@ -54,25 +61,37 @@ am5.ready(function() {
     label.set("background", am5.RoundedRectangle.new(root, { fillOpacity: 1, fill: colorSet.next() }));
   };
 
-  // Fetch data from the API
-  fetch("http://127.0.0.1:5000/articles_last_X_hours")
-    .then(response => response.json())
-    .then(data => {
-      const wordCloudData = data.map(item => {
-        return {
-          category: item.split(' (Published')[0],  // Extract article title
-          value: 1  // Assign a value (you could adjust based on other criteria)
-        };
-      });
+  // Function to fetch and update data
+  function updateChart(hours) {
+    fetch(`http://127.0.0.1:5000/articles_last_X_hours?hours=${hours}`)
+      .then(response => response.json())
+      .then(data => {
+        const wordCloudData = data.map(item => {
+          return {
+            category: item.split(' (Published')[0],  // Extract article title
+            value: 1  // Assign a value (you could adjust based on other criteria)
+          };
+        });
 
-      // Set the data for the word cloud
-      series.data.setAll(wordCloudData);
-    });
+        // Set the data for the word cloud
+        series.data.setAll(wordCloudData);
+      })
+      .catch(error => console.error('Error fetching data:', error));
+  }
+
+  // Add event listener to the button to update chart when clicked
+  document.getElementById('updateChartButton').addEventListener('click', function() {
+    var hours = document.getElementById('hours').value;
+    updateChart(hours);
+  });
+
+  // Initial load of chart with default value (24 hours)
+  updateChart(24);
 
 }); // end am5.ready()
 </script>
 
-<!-- HTML -->
+<!-- Chart container -->
 <div id="chartdiv"></div>
 
 </body>

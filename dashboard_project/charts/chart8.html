@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Articles by Keyword Count </title>
+    <title>Articles by Keyword Count</title>
 </head>
 <body>
 
@@ -12,12 +12,29 @@
   width: 100%;
   height: 600px;
 }
+
+#controls {
+  margin-bottom: 20px;
+}
 </style>
 
 <!-- Resources -->
 <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
 <script src="https://cdn.amcharts.com/lib/5/wc.js"></script>
 <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+<!-- Dropdown for selecting keyword -->
+<div id="controls">
+  <label for="keyword-select">Select Keyword:</label>
+  <select id="keyword-select">
+      <option value="إيران">إيران</option>
+    <option value="غزة">غزة</option>
+    <option value="السعودية">السعودية</option>
+    <option value="تركيا">تركيا</option>
+    <!-- Add more options as needed -->
+  </select>
+  <button id="update-chart">Update Chart</button>
+</div>
 
 <!-- Chart code -->
 <script>
@@ -78,33 +95,44 @@ am5.ready(function() {
     alert("Clicked on: " + articleTitle);
   });
 
-  // Fetch data and set it
-  fetch('http://127.0.0.1:5000/articles_by_keyword/%D8%BA%D8%B2%D8%A9')
-    .then(response => response.json())
-    .then(data => {
-      const keyword = "غزة"; // This should be dynamic based on the URL parameter
+  // Function to update the chart with the selected keyword
+  function updateChart(keyword) {
+    var url = "http://127.0.0.1:5000/articles_by_keyword/" + encodeURIComponent(keyword);
 
-      // Format data for Word Cloud
-      const formattedData = data.map(article => ({
-        title: article.title,
-        weight: 1 // Adjust weight if needed
-      }));
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        // Format data for Word Cloud
+        const formattedData = data.map(article => ({
+          title: article.title,
+          weight: 1 // Adjust weight if needed
+        }));
 
-      // Add the keyword as a central element
-      formattedData.unshift({
-        title: keyword,
-        weight: 2 // Higher weight to make it central
+        // Add the keyword as a central element
+        formattedData.unshift({
+          title: keyword,
+          weight: 2 // Higher weight to make it central
+        });
+
+        series.data.setAll(formattedData);
+        series.appear(1000, 100);
       });
+  }
 
-      series.data.setAll(formattedData);
-      series.appear(1000, 100);
-    });
-});
+  // Event listener for button click to update chart
+  document.getElementById('update-chart').addEventListener('click', function() {
+    var selectedKeyword = document.getElementById('keyword-select').value;
+    updateChart(selectedKeyword); // Update chart with the selected keyword
+  });
+
+  // Initialize chart with default keyword
+  updateChart(document.getElementById('keyword-select').value);
+
+}); // end am5.ready()
 </script>
 
 <!-- HTML -->
 <div id="chartdiv"></div>
-
 
 </body>
 </html>

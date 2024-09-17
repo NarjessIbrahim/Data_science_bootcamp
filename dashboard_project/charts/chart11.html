@@ -26,6 +26,15 @@
 </head>
 <body>
     <h1>Article Details</h1>
+
+    <!-- Input field and button to enter the Post ID -->
+    <div>
+        <label for="postIdInput">Enter Post ID:</label>
+        <input type="text" id="postIdInput" placeholder="Enter Post ID">
+        <button id="fetchArticleButton">Fetch Article</button>
+    </div>
+
+    <!-- Table to display article details -->
     <table id="articleDetailsTable">
         <thead>
             <tr>
@@ -40,39 +49,52 @@
     </table>
 
     <script>
-        // Replace <postid> with the actual post ID
-        const postId = '1838457'; // Example: '12345'
-        const url = `http://127.0.0.1:5000/article_details/${postId}`;
+        // Function to fetch and display article details
+        function fetchArticleDetails(postId) {
+            const url = `http://127.0.0.1:5000/article_details/${postId}`;
 
-        // Fetch data from the API
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                const tableBody = document.getElementById('articleDetailsTable').getElementsByTagName('tbody')[0];
+            // Clear any existing rows in the table
+            const tableBody = document.getElementById('articleDetailsTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
 
-                // Create a new row
-                const row = tableBody.insertRow();
+            // Fetch data from the API
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // Create a new row
+                    const row = tableBody.insertRow();
 
-                // Create cells
-                const titleCell = row.insertCell(0);
-                const keywordsCell = row.insertCell(1);
-                const urlCell = row.insertCell(2);
+                    // Create cells
+                    const titleCell = row.insertCell(0);
+                    const keywordsCell = row.insertCell(1);
+                    const urlCell = row.insertCell(2);
 
-                // Insert data into cells
-                titleCell.textContent = data.Title;
-                urlCell.innerHTML = `<a href="${data.URL}" target="_blank">${data.URL}</a>`;
+                    // Insert data into cells
+                    titleCell.textContent = data.Title;
+                    urlCell.innerHTML = `<a href="${data.URL}" target="_blank">${data.URL}</a>`;
 
-                // Create a list for keywords
-                const keywordsList = document.createElement('ul');
-                keywordsList.className = 'keywords';
-                data.Keywords.forEach(keyword => {
-                    const listItem = document.createElement('li');
-                    listItem.textContent = keyword;
-                    keywordsList.appendChild(listItem);
-                });
-                keywordsCell.appendChild(keywordsList);
-            })
-            .catch(error => console.error('Error fetching data:', error));
+                    // Create a list for keywords
+                    const keywordsList = document.createElement('ul');
+                    keywordsList.className = 'keywords';
+                    data.Keywords.forEach(keyword => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = keyword;
+                        keywordsList.appendChild(listItem);
+                    });
+                    keywordsCell.appendChild(keywordsList);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        // Add event listener to the button to fetch article details on click
+        document.getElementById('fetchArticleButton').addEventListener('click', function() {
+            const postId = document.getElementById('postIdInput').value;
+            if (postId) {
+                fetchArticleDetails(postId);  // Fetch details for the entered Post ID
+            } else {
+                alert('Please enter a Post ID.');
+            }
+        });
     </script>
 </body>
 </html>

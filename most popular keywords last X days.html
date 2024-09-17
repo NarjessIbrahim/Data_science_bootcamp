@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Popular Keywords</title>
 </head>
 <body>
 <style>
@@ -18,78 +18,95 @@
 <script src="https://cdn.amcharts.com/lib/5/hierarchy.js"></script>
 <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
 
+<!-- Input Field for Number of Days -->
+<div>
+    <label for="daysInput">Enter Number of Days:</label>
+    <input type="number" id="daysInput" placeholder="Enter days" min="1">
+    <button id="fetchDataButton">Fetch Data</button>
+</div>
+
 <!-- Chart code -->
 <script>
 am5.ready(function() {
 
-// Create root element
-var root = am5.Root.new("chartdiv");
+  // Create root element
+  var root = am5.Root.new("chartdiv");
 
-// Set themes
-root.setThemes([
-  am5themes_Animated.new(root)
-]);
+  // Set themes
+  root.setThemes([am5themes_Animated.new(root)]);
 
-// Create wrapper container
-var container = root.container.children.push(am5.Container.new(root, {
-  width: am5.percent(100),
-  height: am5.percent(100),
-  layout: root.verticalLayout
-}));
+  // Create wrapper container
+  var container = root.container.children.push(am5.Container.new(root, {
+    width: am5.percent(100),
+    height: am5.percent(100),
+    layout: root.verticalLayout
+  }));
 
-// Create series
-var series = container.children.push(am5hierarchy.ForceDirected.new(root, {
-  singleBranchOnly: false,
-  downDepth: 2,
-  topDepth: 1,
-  initialDepth: 1,
-  valueField: "count",
-  categoryField: "name",
-  childDataField: "children",
-  idField: "name",
-  linkWithField: "linkWith",
-  manyBodyStrength: -10,
-  centerStrength: 0.8
-}));
+  // Create series
+  var series = container.children.push(am5hierarchy.ForceDirected.new(root, {
+    singleBranchOnly: false,
+    downDepth: 2,
+    topDepth: 1,
+    initialDepth: 1,
+    valueField: "count",
+    categoryField: "name",
+    childDataField: "children",
+    idField: "name",
+    linkWithField: "linkWith",
+    manyBodyStrength: -10,
+    centerStrength: 0.8
+  }));
 
-series.get("colors").setAll({
-  step: 2
-});
+  series.get("colors").setAll({
+    step: 2
+  });
 
-series.links.template.set("strength", 0.5);
+  series.links.template.set("strength", 0.5);
 
-// Fetch data from the API
-fetch("http://127.0.0.1:5000/popular_keywords_last_X_days")
-  .then(response => response.json())
-  .then(data => {
-    // Debug: Log the raw data
-    console.log('Fetched data:', data);
+  // Function to fetch data and update chart
+  function fetchData(days) {
+    fetch(`http://127.0.0.1:5000/popular_keywords_last_X_days?days=${days}`)
+      .then(response => response.json())
+      .then(data => {
+        // Debug: Log the raw data
+        console.log('Fetched data:', data);
 
-    // Transform data into hierarchical format
-    let transformedData = {
-      name: "Keywords",
-      value: 0, // You can set this to some default value or calculate if needed
-      children: data.map(keyword => ({
-        name: keyword._id,
-        count: keyword.count // Make sure this field matches the valueField in the chart settings
-      }))
-    };
+        // Transform data into hierarchical format
+        let transformedData = {
+          name: "Keywords",
+          value: 0,
+          children: data.map(keyword => ({
+            name: keyword._id,
+            count: keyword.count
+          }))
+        };
 
-    // Debug: Log the transformed data
-    console.log('Transformed data:', transformedData);
+        // Debug: Log the transformed data
+        console.log('Transformed data:', transformedData);
 
-    // Set data to the chart
-    series.data.setAll([transformedData]);
+        // Set data to the chart
+        series.data.setAll([transformedData]);
 
-    // Make stuff animate on load
-    series.appear(1000, 100);
-  })
-  .catch(error => console.error('Error fetching data:', error));
+        // Animate chart
+        series.appear(1000, 100);
+      })
+      .catch(error => console.error('Error fetching data:', error));
+  }
+
+  // Add event listener to button to fetch data when clicked
+  document.getElementById('fetchDataButton').addEventListener('click', function() {
+    const days = document.getElementById('daysInput').value;
+    if (days && days > 0) {
+      fetchData(days);  // Fetch data for the entered number of days
+    } else {
+      alert('Please enter a valid number of days.');
+    }
+  });
 
 }); // end am5.ready()
 </script>
 
-<!-- HTML -->
+<!-- Chart container -->
 <div id="chartdiv"></div>
 
 </body>

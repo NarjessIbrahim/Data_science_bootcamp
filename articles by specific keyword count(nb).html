@@ -2,27 +2,134 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Articles with Specific Keywords Chart</title>
 </head>
 <body>
+
+<!-- Input for user to enter number of keywords -->
+<div class="input-container">
+    <label for="keywordCount">Enter number of keywords:</label>
+    <input type="number" id="keywordCount" min="1" value="7">
+    <button id="updateButton">Update Chart</button>
+</div>
+
+<!-- Chart container -->
+<div id="chartdiv"></div>
+
 <!-- Styles -->
 <style>
-#card {
+#chartdiv {
   width: 100%;
-  height: 200px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
+  height: 500px;
+}
+.input-container {
+  margin-bottom: 10px;
+}
+label {
+  font-size: 16px;
+}
+input[type="number"] {
+  font-size: 16px;
+  padding: 5px;
+}
+button {
+  font-size: 16px;
+  padding: 5px 10px;
 }
 </style>
 
-<!-- HTML -->
-<div id="card">
-  Articles with exactly 7 keywords: <strong>207 articles</strong>
-</div>
+<!-- Resources -->
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+<!-- Chart code -->
+<script>
+am5.ready(function() {
+
+  // Create root element
+  var root = am5.Root.new("chartdiv");
+
+  // Set themes
+  root.setThemes([am5themes_Animated.new(root)]);
+
+  // Create chart
+  var chart = root.container.children.push(am5xy.XYChart.new(root, {
+    panX: true,
+    panY: true,
+    wheelX: "panX",
+    wheelY: "zoomX",
+    pinchZoomX: true,
+    paddingLeft: 0,
+    paddingRight: 0
+  }));
+
+  // Add cursor
+  var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {}));
+  cursor.lineY.set("visible", false);
+
+  // Create axes
+  var xRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 30, minorGridEnabled: true });
+  xRenderer.labels.template.setAll({
+    rotation: -90,
+    centerY: am5.p50,
+    centerX: am5.p100,
+    paddingRight: 15
+  });
+
+  var xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+    categoryField: "keywords",
+    renderer: xRenderer
+  }));
+
+  var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, { renderer: am5xy.AxisRendererY.new(root, {}) }));
+
+  // Create series
+  var series = chart.series.push(am5xy.ColumnSeries.new(root, {
+    name: "Number of Articles",
+    xAxis: xAxis,
+    yAxis: yAxis,
+    valueYField: "value",
+    categoryXField: "keywords",
+    tooltip: am5.Tooltip.new(root, { labelText: "{valueY}" })
+  }));
+
+  series.columns.template.setAll({ cornerRadiusTL: 5, cornerRadiusTR: 5, strokeOpacity: 0 });
+
+  // Fetch and update data from API
+  function updateChart() {
+    var keywordCount = document.getElementById("keywordCount").value;
+
+    fetch(`http://127.0.0.1:5000/articles_with_specific_keyword_count/${keywordCount}`)
+      .then(response => response.json())
+      .then(data => {
+        // Extract count from the API message
+        const message = data.message;
+        const countMatch = message.match(/\((\d+) articles\)/);
+        const count = countMatch ? parseInt(countMatch[1]) : 0;
+
+        // Update chart with new data
+        series.data.setAll([
+          { keywords: `Keywords: ${keywordCount}`, value: count }
+        ]);
+
+        xAxis.data.setAll([{ keywords: `Keywords: ${keywordCount}` }]);
+      })
+      .catch(error => console.error('Error fetching data:', error));
+  }
+
+  // Attach click event to button
+  document.getElementById("updateButton").addEventListener("click", updateChart);
+
+  // Initialize chart with default value
+  updateChart();
+
+  // Animate chart on load
+  series.appear(1000);
+  chart.appear(1000, 100);
+
+});
+</script>
 
 </body>
 </html>

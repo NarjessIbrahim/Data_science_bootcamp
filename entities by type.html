@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<!-- Styles -->
+<style>
+#chartdiv {
+  width: 100%;
+  max-width: 100%;
+  height: 550px;
+}
+</style>
+
+<!-- Resources -->
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/hierarchy.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+<!-- Chart code -->
+<script>
+am5.ready(function() {
+
+  // Create root element
+  var root = am5.Root.new("chartdiv");
+
+  // Set themes
+  root.setThemes([
+    am5themes_Animated.new(root)
+  ]);
+
+  // Function to fetch data from the API
+  async function fetchData() {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/entities_by_type');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }
+
+  // Function to get 10 random items from an array
+  function getRandomItems(arr) {
+    const shuffled = arr.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 40);
+  }
+
+  // Create chart
+  async function createChart() {
+    const apiData = await fetchData();
+
+    if (!apiData) {
+      console.error("No data received from API");
+      return;
+    }
+
+    // Prepare data for chart
+    let chartData = {
+      value: 0,
+      children: []
+    };
+
+    for (const [entityType, entities] of Object.entries(apiData)) {
+      chartData.children.push({
+        name: entityType,
+        children: getRandomItems(entities).map(entity => ({
+          name: entity,
+          value: 1
+        }))
+      });
+    }
+
+    // Create wrapper container
+    var container = root.container.children.push(am5.Container.new(root, {
+      width: am5.percent(100),
+      height: am5.percent(100),
+      layout: root.verticalLayout
+    }));
+
+    // Create series
+    var series = container.children.push(am5hierarchy.ForceDirected.new(root, {
+      singleBranchOnly: false,
+      downDepth: 2,
+      topDepth: 1,
+      initialDepth: 1,
+      valueField: "value",
+      categoryField: "name",
+      childDataField: "children",
+      idField: "name",
+      linkWithField: "linkWith",
+      manyBodyStrength: -10,
+      centerStrength: 0.8
+    }));
+
+    // Apply color step and other settings
+    series.get("colors").setAll({
+      step: 2
+    });
+    series.links.template.set("strength", 0.5);
+
+    // Set the chart data
+    series.data.setAll([chartData]);
+
+    // Animate chart on load
+    series.appear(1000, 100);
+  }
+
+  // Initialize the chart
+  createChart();
+
+}); // end am5.ready()
+</script>
+
+<!-- HTML -->
+<div id="chartdiv"></div>
+
+
+
+</body>
+</html>

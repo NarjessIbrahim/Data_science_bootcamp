@@ -918,7 +918,7 @@ def most_updated_articles():
 def articles_last_x_hours():
     try:
         # Get the number of hours from the query parameter
-        hours = int(request.args.get('hours', 700))  # Default to 24 hours if not provided
+        hours = int(request.args.get('hours', 2000))  # Default to 24 hours if not provided
 
         # Calculate the start time for the query
         now = datetime.now(pytz.UTC)
@@ -1008,6 +1008,33 @@ def sentiment_trends():
 
     results = list(collection.aggregate(pipeline))
     return jsonify(results)
+
+
+
+@app.route('/entities_by_type', methods=['GET'])
+def get_entities_by_type():
+    # Fetch all documents
+    documents = collection.find()
+
+    # Initialize a dictionary to hold the entities grouped by type
+    entities_by_type = {}
+
+    # Loop through all documents
+    for document in documents:
+        # Check if the document has an 'entities' field
+        if 'entities' in document:
+            for entity in document['entities']:
+                entity_type = entity['type']
+                entity_text = entity['text']
+
+                # If the type is not already a key, create a list for it
+                if entity_type not in entities_by_type:
+                    entities_by_type[entity_type] = []
+
+                # Append the text to the appropriate type list
+                entities_by_type[entity_type].append(entity_text)
+
+    return jsonify(entities_by_type)
 
 
 #start the Flask app
